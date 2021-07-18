@@ -86,11 +86,11 @@ var io = {
       };
     }
     
-    if (address === "") {
+    if (io.address === "") {
       io.address = window.location.hostname;
     }
     
-    if (port === "") {
+    if (io.port === "") {
       io.port = window.location.port;
     }
     
