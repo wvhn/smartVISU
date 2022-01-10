@@ -1,3 +1,290 @@
+## 3.2.0
+### New / Changed Widgets
+- basic.window and device.window provide an additional color mode: icon0 if closed / custom color if open
+- weather service met.no displays city name retrieved from geonames.org with geo coordinates (new service getLocation.php)
+- basic.offset accepts min / max limits as parameters
+- device.rtrslider offset buttons are limited to min / max but accept a symmetric "tolerance" for backward compatibility
+- basic flip slider track can be styled with any valid color
+- basic.stateswitch can be configured to open any named popup on a long-press (mobile: tap-hold) event 
+- plot.period shows data for the running day from 0:00 to 24:00 if zoom parameter ist set to 'day'
+- plot widgets interpret duration values without units as timestamps (same behaviour as smarthomeNG)
+- new widget appliance.iprouter_v2 displays data from refactored enertex ip router service
+- uzsu widgets support the time series mode provided by the new smarthomeNG UZSU plugin.
+- device.uzsutable provides more colors corresponding to the "on" and "off" values and a fill option until the next switching event.
+- device.uzsugraph provides a scrollbar and zoom buttons to scroll through 7 days stating from "today" (good to review sun-based events)
+- calendar.list can be configured to additionally show the individual weekday in short or long format 
+- plot.period can be used with data from list items (as an alternative to standard database series).  
+- new widget lib.supersize expands single blocks to full screen width and resizes plots (if available). See docu page for design -> blocks
+- multimedia.image uses new parameter 'localize' to enable URLs containing credentials. If 'true', image is loaded by php script ./lib/multimedia/camimage.php
+- status.toast uses the widget id as additional class name (pure id like in parameter set). This can be used for css styling.
+- new widget plot.xyplot displays x/y data provided by the backend in list item(s)
+
+### Other New Features
+- template checker now checks smarthomeNG item properties (valid properties and types)
+- openHAB driver from Patrik Germann (thanks!) supports SSL and authentication
+- smarthome(NG) driver (io_smarthome.py.js) accepts a second port for TLS communication. Port & protocol will be switched according to host protocol (http / https) 
+- refactored php service (enertex.iprouter-v2.php) for enertex IP Router connects to current firmware version and provides more data 
+- anchor links can now be used, e.g. href="index.php?page=myPage&anchor=myAnchor" 
+- ressource intensive pages (config, templatechecker, widegt assistant) are cleared from DOM after usage in order to optimize performance. 
+  Browser back/ forward buttons are blocked on these pages.
+- header menu icons get animated on click in order to visualize an activated link on slow devices 
+- custom language file can be placed in ./dropins/lang
+- with the new menu system, the secondary page area containing weather / calendar / phone widgets is now available on smartphone displays (as infopage.html)
+- new smarthomeNG driver with enhanced connectivity. Connects always with IP v4 & ports, with host name & ports if host name equals configured smartVISU host name, other alpha-numeric requests via URL & port 80/443 
+
+### Improvements
+- Driver config data are globally availble now in the sv.config.driver{} array
+- Config page layout adapted to new options
+- Scripts for config page stored in separate js-file (to save some ressources/time on normal visu pages)
+- device.rtrslider sets the display formats according to the decimals of the parameter 'step'
+- improved error notifications with basis for language specific message texts and error source identification
+- fritz!box TR-064 phone service shows blocked calls as "rejected" instead of outgoing (w/ new icon)
+- additional js-scripts can be loaded with a backend driver if stored in a folder with the drivers name
+- new system menu in navigation on primary side (right hand side) saves ressources. Config page must be called as menu item. 
+- base language is recognized from first "extends" value during language file processing. Accessible in JavaScript as "sv_lang.baselang" and in twig as lang('baselang') 
+- config tabs 'pages' and 'device' now show the globally selected options if no specific value is defined (yet select menus only since they steer the options structure as well)
+
+### Updated Libraries
+- jQuery v2.2.4 with patch in jQuery mobile v1.4.5
+- twig v1.44.6: final and last release for v1.x which still supports global macros (v2.x and v3.x don't)
+- highcharts/ highcharts stock v9.3.1
+
+### Deprecated
+- openHAB2 driver
+- notify.info/warning/error(title, text): use notify.message("info" / "warning" / "error", title, text) instead
+
+### Removed Features
+- replaced several deprecated jQuery / jQuery mobile functions & attributes
+- deprecated Fritz!Box drivers. See deprecation notice in ./lib/phone/service
+
+### Fixed Bugs
+- Sliders for HSV color model did not send updated values if only one slider was changed
+- plot data lost their ascending sequence occationally which resulted in lines across the plots
+- Page navigation away from widget assistant often failed and / or threw errors in console
+- status.activelist expanded all contents when unser returned to the page (now all are collapsed)
+- digiclock disappeared or showed wrong times if more than one page with clock was in the DOM
+- offline data were not correctly loaded if "pages" parameter was used in the URL. Now we evaluate "pages" and set the offline filename accordingly.
+- after reload, config page showed settings that should have been hidden
+- Firefox ignored jQM theme selection for collapsible block headings
+- some drivers threw errors due to empty function io.stopseries and interrupted the page change process (2nd click necessary to change page)
+- iobroker driver did not work with boolean items. A conversion is integrated now.
+
+### Known Bugs
+- if item contains a stringified number (e.g. with leading zero). widget.set converts it back to numeric format - so basic.print can not print it as text
+
+
+## 3.1
+### New / Changed Widgets
+- new weather service API met.no for deprecated yr.no
+- new widget status.activelist to display json messages as active listview
+- device.uzsuicon can be displayed as button with additional "type" parameter (micro, mini or midi)
+- basic.symbol provides button design as additional options btn-micro, btn-mini or btn-midi with additional text on icon
+- basic.slider provides a new silent mode. Live mode (default) sends changed values constantly, silent mode only if change is completed.
+- plot.period provides stacked plots for line, area and column
+- image / data exporting via context menu in plot.period 
+- status.collapse supports a list of multiple values for control of collapsing / hiding
+- device.rtrslider supports offset temperature for MDT RTR and supplements (like device.rtr)
+- multimedia.slideshow now refreshes available images in a defineable time
+- basic.offset rounds result to the count of decimals given by "step" attribute
+- weather service openweathermap.org accepts location by ID (id=...), postal code (zip=...) or latidude&longitude (lat=...&lon=...) in adddition to city name
+
+### Other New Features
+- php8 compatibility (mainly solved by new management of warnings and 'nullsafe' programming)
+- parameter [debug = "1"] in config.ini enables error reporting for php warnings
+- new public functions in weather.php plus new language category [weather] to centrally determine verbal wind direction and strength
+- weather services use humidity and air pressure as additional data (has been max. one out of both)
+- demoseries in offline driver have been synchronized to the minute in order to enable stacking of demoseries
+- new function Number.prototype.decimals() to determine count of decimals of a number
+- new page ./pages/base/widget_docu.html displays parameter info for all widgets (tool to optimize custom widgets docstrings)
+
+### Improvements
+- error reporting for weather services and CalDav / iCloud calendars shows answers from remote
+- error reporting for phone service improved
+- error notification avoids duplicate messages (weather and phone services)
+- error notification is cleared if service is running again (weather and phone services)
+- complete review of all parameter definitions in order to improve results in template checker
+- improved autocomplete lists and styling in widget assistent
+
+### Updated Libraries
+- Highcharts updated to v9.1
+- ICal ICS Parser updated to v2.2.2
+
+### Deprecated
+- weather service yr.no (use met.no as replacement)
+- weather service wunderground (use weather.com as replacement) 
+- fritz!box services other than TR-064
+- custom widgets using sliders ( <input type="range" ... >) must use attributes "data-orientation" and "data-handleinfo" instead of "orientation" and "handleinfo"
+
+### Removed Features
+- support for older widgets (non jQuery mobile types) has been finally removed
+- unsued Google Closure compiler has been removed
+- deprecated ov.colordisc and ov.rgb removed from example3.graphics. Use ovbasic.color instead
+
+### Fixed Bugs
+- plot.pie did not show series titles as labels / legend
+- some weather services did not use correct language if user defined language extension file was used
+- some weather services did not use the units specified in the language file
+- default repeat interval for phone services was 15 months. Corrected to 15 minutes.
+- design colors where not defined in 'pages' and 'device' options of the config page
+- config options selectable with flip switches where not stored properly in "device" tab (cookie mode) 
+- cache folders where deleted completely regardless of source (global / cookie)
+- met.no weather service showed no icon if started directly after midnight and had problems with chages to summer time
+- when leaving a page via the "back" button, widgets exit method and cancellation of plot data subscriptions didn't work.
+- conflicts between exit method and older versions of back-to-home functions 
+- templatechecker did not consider widgets in the pages subfolder
+- plot.gauge threw warnings due to faulty "data-axis" parameter. 
+- 100% check of docu pages and widgets with W3C validator revealed some issues - fixed. 
+- widget assistant threw errors with nested curly brackets (e.g. in plot options)
+
+### Known Bugs
+
+
+## 3.0.1
+### New / Changed Widgets
+
+### Other New Features
+- Template Checker allows copying to clipboard
+- new design "holo-inspired"
+
+### Improvements
+- improved readability in template checker (new global config variable sv.config.icon0 / .icon1 for symbols, improved colors )
+- page reload link in top right corner has been re-activated
+- new warning message in template checker if optional masteritem file is not available
+
+### Fixed Bugs
+- faulty page navigation if files had been in ./dropins or ./dropins/widgets before configuration was completed
+- template checker didn't run on certain systems which took a '?> ' before EOF too serious in a class definition 
+- widget assistant did not show rendered widgets while page cache was enabled
+- scalable icons caused a problem in stateswitch button with text
+- fixed search string in calendar.waste and improved icon scalability
+- php errors thrown in calendar service due to usage of deprecated join() statement
+- outline render page for widget assistant has been fixed, also for Apple devices
+
+### Known Bugs
+- when leaving a page via the "back" button, widgets exit method and cancellation of plot data subscriptions won't work.
+  (root cause documented in base.js line 1804)
+
+
+## 3.0
+
+### New / Changed Widgets
+- new "widget assistant" tool to parametrize and test widgets (thanks to Andre Kohler)
+- template checker checks for items and item types with masteritem file form backend (thanks to Andre Kohler)
+- template checker provides replacement proposals for older widgets which have been removed already in the current version
+- darksky weather service shows verbal wind directions instead of angle values
+- new weather service weather.com as replacement for Wunderground
+- deprecated widgets from v2.8 and earlier have been deleted
+- basic.trigger can trigger logics on page create (new) and / or by button
+- basic.select "menu"-type accepts dynamic option lists and texts via items (list type)
+- new dynamic icon "icon.battery2"
+- new widget lib.connection to display the URL of the websocket plus shNG websocket server (module / plugin) and start time
+- added setpoint item to quad.rtr 
+- new widget clock.countdown to visualize timers in backend
+- new widget lib.timestamp to write a timestamp of "now" to an item (used for countdown doc page)
+- new widget device.uzsutable to display a timer in a table format of 24 hours / 7 days
+- new widget ovbasic.symbol in example3.graphic - same features as basic.symbol but with absolute positioning
+- icon sizes can be changed by parameters in basic.symbol and basic.icon 
+- widget weather.current takes weather values from backend item alternativly to online weather informaion
+- new widget event "exit" allows stopping of functions before page change (e.g. deleting timers)
+- new widget basic.roundslider with flexible design options (thanks to Bonze)
+- new widget device.rtrslider for slider control of set temperature and functionality of device.rtr (thanks to Bonze)
+- new widget status.toast to display notifications (thanks to Bonze)
+- new widget basic.window shows opening status of windows and sutter position 
+- new widget device.window shows window status and opens popup to control the shutter
+- new widget plot.heatingcurve shows actual outside and feed temperatures on the heating curve 
+- phone list shows called number on outgoing call if available from backend
+
+### Other New Features
+- bash script "setpermissions" added for setting file permissions during initial setup. To be called by 'sudo bash setpermissions'
+- new option "Reverse Proxy" in backend driver section on config page clears IP address and port (yet activated for shNG only)
+- config page disables cache activation in case cache directory is not writeable
+- support for smarthomeNG feature "series_cancel" to stop subscription of series data
+- series subscriptions will be cancelled when next page is about to load
+- widget assistant can be deactivated in config page in order to save ressources
+- new version number format (e.g. v2.9.2) is standard in communication w/ io-drivers, old format is deprecated
+- menu button for German "Kurzanleitung" (separately available on github.com/smartvisu-newstuff/kurzanleitung) integrated in system menu
+- language is switched to "en" by default if configured language file does not exist any more
+- new twig function 'twig_items()' provides a list of all items from 'masteritem.json'
+- new twig function 'asset_exists()' replaces former AssetExistExtension 
+- simplified import of widgets by extended twig loader path 
+- new event 'ioAlive' on $(document) is triggered when websocket server has started communicating
+- new welcome page in pages/smarthome for users who configure "smarthome" without having started page auto-generation in shNG
+
+### Improvements
+- function Date().duration changed to accept negative values (for plots reaching into the future)
+- new function 'sendqueue' in io.smarthome.py.js sends 'logic'-commands queued while websocket is not ready
+- endless timer for digiclock is stopped during page change. This avoids useless loading of multiple pics every minute
+- index.html shows phone list and calendar by default, unless "service_disabled" is selected in config page
+- html escaping function for status.log
+- improved integration of custom widgets in docu - show only title but no link if docu page doesn't exist
+- improved docu page for examples of blocks - explain code for collapsibles and show variation of width
+- changed smartVISU and Miniclock appearance in top-right corner - now in CSS defined colors but without page-reload link
+- default colors are now declared in the head area of the design CSS files - not hard-coded any more in index.php
+- multimedia.image stops loading images after page has been left (via exit event)
+- increased time limit in template checker to avoid fatal timeout errors while checking big pages w/ plenty of wifgets
+- added welcome page for users having "smarthome" pages configured (normally used for shNG autogenerated pages)
+- language formats now distinguish between angular degrees (°) and temperature (°C / °F)
+- prepare for new folder dropins/shwidgets where backends can handle widgets
+
+### Updated Libraries
+- updated Twig to v1.44.2 (2021/01/05)
+- a bunch of new icons (thanks to @mfd)
+
+### Deprecated
+- widget basic.shifter replaced by dynamic icons (basic.icon)
+
+### Removed Features
+- deprecated widgets from v2.8 and earlier have been deleted
+- removed protocol versions <= 3 in smarthome.py driver
+- support for older widgets (non jQuery mobile types) has been terminated 
+  (in case of urgency re-activateable in ./lib/base/base.js by uncommenting widget.update, widget.prepare, widget.refresh)
+
+### Fixed Bugs
+- error thrown if default calender icons in language files were missing
+- language files distinguish between temperature and angular degrees (°C/°F vs. °)
+- obsolete parameters in init functions of service.php and calendar.php caused faulty error messages
+- fixed debug feature in php services 
+- fixed device.rtr misleading night / day icons 
+- all examples and docu checked and optimized with template checker
+- calendar.waste entries got overruled by smaller snippets (e.g. "green bin" by "bin" ) if snippet was not listed first 
+- widget.explode() was sorting purely numeric item names, so occationally items were swapped
+- fritz!box_TR-064 driver threw warnings disturbing the data stream in certain environments
+
+### Known Bugs
+- when leaving a page via the "back" button, widgets exit method and cancellation of plot data subscriptions won't work.
+  (root cause documented in base.js line 1804)
+- On Apple devices with Safari browser, the widget assistant does not open a new window for rendering. 
+  Deactivate "Preview in new Window" option to view the result in the box below the option panel.
+
+## 2.9.2
+
+### New / Changed Widgets
+- basic.stateswitch accepts items of type 'list'
+- default icon can be defined for calendar / waste calendar, improved icon definition.
+
+### Other New Features
+- new weather service openweathermap
+
+### Improvements
+- new versioning (major.minor.revision). Update checker looks for remote version on smartvisu.de AND github master
+- update check is paused for 7 days after every execution (by cookie "updchk")
+- system page for SmartHomeNG has been updated. SmartHomeNG icons added to icons folder
+- added timezone handling for different OS in OpenHAB 2 driver
+- improved docu pages e.g. for dynamic icons and status widget
+- cookie security adapted to recent standards ("samesite" option) for config and update check
+- added custom pages folders to .gitignore
+
+### Updated Libraries
+
+### Fixed Bugs
+- writing config file was not reliable under windows.
+- cache execution failed in quad design if more than one device was used 
+- Twig didn't report lib.updatecheck to the template checker
+- ovdevice.dimmer (example3.graphic): stateswitch fired twice if item_switch was used in dynamic icon
+- text2br option for basic.print didn't display correctly
+- example3.graphic: centering of icons was missing in absolute positioning of visu elements
+- mixed spelling of "adress" / "address" in eibd driver 
+
 ## v 2.9
 
 ### New / Changed Widgets

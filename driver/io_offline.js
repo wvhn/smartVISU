@@ -7,7 +7,13 @@
  * -----------------------------------------------------------------------------
  * @hide        driver_address
  * @hide        driver_port
+ * @hide        driver_tlsport
  * @hide        driver_autoreconnect
+ * @hide		reverseproxy
+ * @hide		driver_ssl
+ * @hide		driver_username
+ * @hide		driver_password
+ * @hide		sv_hostname
  */
 
 
@@ -20,9 +26,13 @@ var io = {
 	// the address
 	address: '',
 
-	// the port
+	// the ports
 	port: '',
-
+	tlsport: '',
+	
+	// the pages used for offline_*.var filename
+	pages: '',
+	
 	uzsu_type: '0',
 
 	// -----------------------------------------------------------------------------
@@ -61,13 +71,23 @@ var io = {
 	/**
 	 * Initializion of the driver
 	 *
-	 * @param      the ip or url to the system (optional)
-	 * @param      the port on which the connection should be made (optional)
+	 * Driver config parameters are globally available as from v3.2
 	 */
-	init: function (address, port) {
-		io.address = address;
-		io.port = port;
+	init: function () {
+		io.address = '';
+		io.port = '';
+		io.tlsport = '';
 		io.stop();
+		var pagesIndex = location.search.indexOf('pages');
+		var ampersIndex = location.search.indexOf('&');
+		if (pagesIndex > 0){
+			io.pages = (ampersIndex > pagesIndex ? location.search.substring(pagesIndex + 6, ampersIndex) : location.search.substring(pagesIndex + 6)) ;	
+		}
+		// the easy method does not work with older tablets	(e.g. Safari iOS < v10.3)
+		//var params = new URLSearchParams(location.search.substring(1));
+		//if (params.has("pages"))
+		//io.pages = params.get("pages"); 
+		console.log('[io.offline]: driver started'+(io.pages != '' ? ' with file "./temp/offline_'+io.pages+'.var"' :''));
 	},
 
 	/**
@@ -129,7 +149,7 @@ var io = {
 	 */
 	get: function (item) {
 		$.ajax({  url: "driver/io_offline.php",
-			data: {"item": item},
+			data: {"pages": io.pages, "item": item},
 			type: "GET",
 			dataType: 'json',
 			async: true,
@@ -155,7 +175,7 @@ var io = {
 
 		io.stop();
 		$.ajax({  url: "driver/io_offline.php",
-			data: {"item": item, "val": JSON.stringify(val)},
+			data: {"pages": io.pages, "item": item, "val": JSON.stringify(val)},
 			type: 'POST',
 			dataType: 'json',
 			cache: false
@@ -179,7 +199,7 @@ var io = {
 		// only if anyone listens
 		if (items.length) {
 			$.ajax({  url: 'driver/io_offline.php',
-				data: {"item": items},
+				data: {"pages": io.pages, "item": items},
 				type: 'GET',
 				dataType: 'json',
 				async: true,
@@ -260,8 +280,15 @@ var io = {
 			max = 1;
 		}
 
-		tmin = new Date().getTime() - new Date().duration(tmin);
-		tmax = new Date().getTime() - new Date().duration(tmax);
+		//tmin = new Date().getTime() - new Date().duration(tmin);
+		//tmax = new Date().getTime() - new Date().duration(tmax);
+		
+		//synchronize timestamps for demoseries to the minute in order to allow stacked plots
+		var actualTime = new Date()
+		var actualMinute = Math.round(actualTime/60000) * 60000; 
+		tmin = new Date (actualMinute) - new Date().duration(tmin);
+		tmax = new Date (actualMinute) - new Date().duration(tmax);
+		
 		var step = Math.round((tmax - tmin) / (cnt-1));
 		if(step == 0)
 			step = 1;
@@ -311,6 +338,13 @@ var io = {
 		}
 
 		return ret;
+	},
+	
+	/**
+	 * stop all subscribed series
+	 */
+	stopseries: function () {
+		$.noop;		
 	}
 
 };

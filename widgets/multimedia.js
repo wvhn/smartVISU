@@ -7,37 +7,56 @@ $.widget("sv.multimedia_image", $.sv.widget, {
   options: {
 
   },
+    _ticker: null,
+	_currentErrorNotification: 0,
+	
     _init: function() {
       if (this.element.attr('data-repeat'))
-      {
         this.element.attr('data-repeat-milliseconds', Number(new Date().duration(this.element.attr('data-repeat'))));
-      }
-
+      this.element.attr('stopTimer', 'false');
     },
+	
     _update: function(response) {
       var widget_url = this.element.attr('data-url');
       var resp = Array.isArray(response) ? response[0]: response;
+
       if (widget_url)
-      {
         var img_base = widget_url + ((widget_url.indexOf('?') == -1) ? '?' : '&');
-      }
       else
-      {
         var img_base = resp + ((resp.indexOf('?') == -1) ? '?' : '&');
-      }
-			img = img_base + '_=' + new Date().getTime();
-      refreshing = this.element.attr('data-repeat') ? this.element.attr('data-repeat') : 'refresh by item';
-			console.log("Response: " + response + " Update Multimedia Image: " + img + ", repeat: " + refreshing);
-			this.element.attr('src', img);
+
+	  img = img_base + '_=' + new Date().getTime();
+	  refreshing = this.element.attr('data-repeat') ? this.element.attr('data-repeat') : 'refresh by item';
+	  // console.log("Response: " + response + " Update Multimedia Image: " + img + ", repeat: " + refreshing);
+	  this.element.attr('src', img);
       if (this.element.attr('data-repeat') && ! img.startsWith('_='))
       {
         var delay = Number(this.element.attr('data-repeat-milliseconds'));
         var el = this;
-        setTimeout(function() {
-          el._update(undefined);
-        }, delay);
+        this._ticker = setTimeout(function() {el._update("timer");}, delay);
+        console.log("Start timer " + this._ticker);
       }
-    }
+      this.element.attr('stopTimer', 'false');
+    },
+    
+	_exit: function(){
+        clearTimeout(this._ticker);
+        console.log("Clear multimediaimage timer " + this._ticker);
+        this._ticker = null;
+    },
+	
+	// error handling for localized URL (called via ./lib/multimedia/camimage.php)
+	// only called if widget parameter 'localized' = 'true'
+	loadError: function(){
+		//as long as we can't read the already echoed error message directly we try to load the source again to create a proper error message
+		var self = this;
+		$.get(this.element.attr('data-url'))
+		   .fail(function(jqXHR, status, errorthrown){
+			   if (self._currentErrorNotification == 0 || !notify.exists(self._currentErrorNotification) )
+				self._currentErrorNotification = notify.json(jqXHR, status, errorthrown);
+		   }
+		);
+	}
 });
 
 
@@ -71,7 +90,10 @@ $.widget("sv.multimedia_slideshow", $.sv.widget, {
 	initSelector: '[data-widget="multimedia.slideshow"]',
 
 	options: {
+		directory: ''
 	},
+	
+	_currentErrorNotification: 0,
 
 	_create: function() {
 		this._super();
@@ -96,6 +118,56 @@ $.widget("sv.multimedia_slideshow", $.sv.widget, {
 	},
 
 	_repeat: function() {
+		var element = this.element;
+		var repeatMinutes = (new Date().duration(this.options.repeat) - 0) / 60000;
+		var filter = '(.%2B?).(jpg|png|svg)'; //need to escape the '+' sign with %2B
+		var currentSet = [];
+		var dataByFile = [];
+		var setChanged = false;
+		
+		$.ajax({
+			dataType: "json",
+			url: 'lib/getdir.php' + '?directory=' + this.options.directory + '&filter=' + filter,
+			context: this,
+			beforeSend: function(jqXHR, settings) { jqXHR.svProcess = 'Multimedia Slideshow Widget'; },
+			success: function(data) {
+				dataKeys = Object.keys(data);
+				var i;
+				for (i = 0; i < dataKeys.length; i++) {
+					dataByFile[i] = data[dataKeys[i]]['path'];
+				}
+				// check for deleted files and remove them from html
+				i = 0;
+				$.each(element.find('img'), function(index){
+					currentSet[i] = $(this).attr('src'); 
+					if (!dataByFile.includes(currentSet[i]))
+					$(this).remove();
+					setChanged = true; 	
+					i++;
+				});
+				// check for new files and append them to html
+				for (i = 0; i < dataKeys.length; i++) {
+					if (!currentSet.includes(data[dataKeys[i]]['path'])){
+						var newSlide = '<img src="'+data[dataKeys[i]]['path']+'" style="display: block;" title="'+data[dataKeys[i]]['label']+'" alt="'+data[dataKeys[i]]['label']+'" />';
+						element.cycle('add', newSlide);
+					}
+				}
+				
+				if (setChanged){
+					element.cycle('reinit');
+					setChanged = false;
+				}
+		
+				if (this._currentErrorNotification != 0){
+					notify.remove(this._currentErrorNotification);
+					this._currentErrorNotification = 0;
+				}
+			}
+		})
+		.fail(function(jqXHR, status, errorthrown){
+			if (this._currentErrorNotification == 0 || !notify.exists(this._currentErrorNotification))
+				this._currentErrorNotification = notify.json(jqXHR, status, errorthrown);
+		});
 	},
 
 	_events: {

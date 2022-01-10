@@ -23,6 +23,7 @@ class service
 
 	var $data = array();
 	var $error = array();
+	var $errorMessage = '';
 
 	/**
 	 * constructor
@@ -37,14 +38,30 @@ class service
 	 */
 	public function init($request)
 	{
-		$this->debug = ($request['debug'] == 1);
-		error_reporting($this->debug ? E_ALL : 0);
+		if (isset($request['debug']))
+			$this->debug =($request['debug'] == 1);
+		error_reporting(E_ALL);
+		
+		set_error_handler(
+			function($errno, $errstr, $errfile, $errline)
+			{
+			$this->errorMessage = $errstr;
+			if ($this->debug == 1) 				
+				return false;	// hand over to standard error reporting
+			else
+				return true;
+			}
+		,E_ALL);
+		
+		// the following section has been deactivated by wvhn 
+		// all services bring their own init functions which define the needed communication parameters
+		// (most services threw misleading errors here, because $request was empty)
 
-		$this->server = $request['server'];
-		$this->port = (int)$request['port'];
-		$this->url = $request['url'];
-		$this->user = $request['user'];
-		$this->pass = $request['pass'];
+		//$this->server = $request['server'];
+		//$this->port = (int)$request['port'];
+		//$this->url = $request['url'];
+		//$this->user = $request['user'];
+		//$this->pass = $request['pass'];
 	}
 
 	/**
@@ -83,7 +100,7 @@ class service
 		$ret = "";
 
 		if (count($this->error) == 0)
-			$this->run();
+			$this->run(); 
 
 		if (count($this->error) == 0)
 		{

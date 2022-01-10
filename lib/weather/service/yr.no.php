@@ -6,6 +6,8 @@
  * @copyright   2012 - 2015
  * @license     GPL [http://www.gnu.de]
  * -----------------------------------------------------------------------------
+ * @hide		weather_postal
+ * @deprecated	true
  */
 
 
